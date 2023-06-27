@@ -33,7 +33,6 @@ func ReadGenConfigFromReader(reader io.Reader) (*GenConfig, error) {
 	if config.CmakeGenVersion != "0.0.0" {
 		return nil, fmt.Errorf("wrong deps file format version '%v'", config.CmakeGenVersion)
 	}
-	log.Printf("read: %v", config)
 
 	return config, unmarshalErr
 }

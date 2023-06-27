@@ -28,6 +28,16 @@ type Data struct {
 	DependencyLibraryString string
 }
 
+func getLibraryNameFromRepo(repo string) string {
+	projectName := strings.Split(repo, "/")[1]
+	log.Printf("projectName: '%v'", projectName)
+	if strings.HasSuffix(projectName, "-c") {
+		return projectName[:len(projectName)-2]
+	}
+
+	return projectName
+}
+
 func Build(genConfigFilename string) error {
 	config, err := genconfig.ReadGenConfigFromFilename(genConfigFilename)
 	if err != nil {
@@ -38,6 +48,7 @@ func Build(genConfigFilename string) error {
 	if findErr != nil {
 		return findErr
 	}
+
 	if len(configFiles) == 0 {
 		return fmt.Errorf("didn't find config files")
 	}
@@ -49,8 +60,7 @@ func Build(genConfigFilename string) error {
 
 	var dependencyLibraryNames []string
 	for _, dep := range depsConfig.Dependencies {
-		projectNames := strings.Split(dep.Name, "/")
-		dependencyLibraryNames = append(dependencyLibraryNames, projectNames[1])
+		dependencyLibraryNames = append(dependencyLibraryNames, getLibraryNameFromRepo(dep.Name))
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -65,12 +75,14 @@ func Build(genConfigFilename string) error {
 		return err
 	}
 
-	nameSplit := strings.Split(depsConfig.Name, "/")
+	libraryNameFromDepsConfig := getLibraryNameFromRepo(depsConfig.Name)
 
-	data := Data{Name: nameSplit[1], SourceDirs: config.SourceDirs, DependencyLibraryNames: dependencyLibraryNames,
+	data := Data{
+		Name:                    libraryNameFromDepsConfig,
+		SourceDirs:              config.SourceDirs,
+		DependencyLibraryNames:  dependencyLibraryNames,
 		DependencyLibraryString: strings.Join(dependencyLibraryNames, " ")}
 
-	log.Printf("data: %v", data)
 	result.Execute(os.Stdout, data)
 
 	return nil
