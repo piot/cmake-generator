@@ -77,11 +77,17 @@ func Build(genConfigFilename string) error {
 
 	libraryNameFromDepsConfig := getLibraryNameFromRepo(depsConfig.Name)
 
+	publicDependencyLibraryNames := ""
+
+	if len(dependencyLibraryNames) > 0 {
+		publicDependencyLibraryNames = "PUBLIC " + strings.Join(dependencyLibraryNames, " PUBLIC ")
+	}
+
 	data := Data{
 		Name:                    libraryNameFromDepsConfig,
 		SourceDirs:              config.SourceDirs,
 		DependencyLibraryNames:  dependencyLibraryNames,
-		DependencyLibraryString: strings.Join(dependencyLibraryNames, " ")}
+		DependencyLibraryString: publicDependencyLibraryNames}
 
 	result.Execute(os.Stdout, data)
 
