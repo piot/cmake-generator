@@ -9,8 +9,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -24,13 +25,14 @@ type Options struct {
 type Data struct {
 	Name                    string
 	SourceDirs              []string
+	SourceFilesString       string
 	DependencyLibraryNames  []string
 	DependencyLibraryString string
+	ArtifactType            string
 }
 
 func getLibraryNameFromRepo(repo string) string {
 	projectName := strings.Split(repo, "/")[1]
-	log.Printf("projectName: '%v'", projectName)
 	if strings.HasSuffix(projectName, "-c") {
 		return projectName[:len(projectName)-2]
 	}
@@ -39,6 +41,13 @@ func getLibraryNameFromRepo(repo string) string {
 }
 
 func Build(genConfigFilename string) error {
+	absoluteConfigPath, absErr := filepath.Abs(genConfigFilename)
+	if absErr != nil {
+		return absErr
+	}
+
+	absoluteConfigDirectory := filepath.Dir(absoluteConfigPath)
+
 	config, err := genconfig.ReadGenConfigFromFilename(genConfigFilename)
 	if err != nil {
 		return err
@@ -59,8 +68,13 @@ func Build(genConfigFilename string) error {
 	}
 
 	var dependencyLibraryNames []string
-	for _, dep := range depsConfig.Dependencies {
-		dependencyLibraryNames = append(dependencyLibraryNames, getLibraryNameFromRepo(dep.Name))
+
+	if len(config.Dependencies) == 0 {
+		for _, dep := range depsConfig.Dependencies {
+			dependencyLibraryNames = append(dependencyLibraryNames, getLibraryNameFromRepo(dep.Name))
+		}
+	} else {
+		dependencyLibraryNames = config.Dependencies
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -75,21 +89,49 @@ func Build(genConfigFilename string) error {
 		return err
 	}
 
-	libraryNameFromDepsConfig := getLibraryNameFromRepo(depsConfig.Name)
+	cmakeName := config.Name
+	if config.Name == "" {
+		cmakeName = getLibraryNameFromRepo(depsConfig.Name)
+
+	}
 
 	publicDependencyLibraryNames := ""
 
 	if len(dependencyLibraryNames) > 0 {
-		publicDependencyLibraryNames = "PUBLIC " + strings.Join(dependencyLibraryNames, " PUBLIC ")
+		const libraryNamesSeparator = "\n  PUBLIC "
+		publicDependencyLibraryNames = libraryNamesSeparator + strings.Join(dependencyLibraryNames,
+			libraryNamesSeparator)
 	}
 
+	var sourceFiles []string
+	for _, sourceDir := range config.SourceDirs {
+		globWildcard := filepath.Join(absoluteConfigDirectory, sourceDir, "*.c")
+		matches, err := filepath.Glob(globWildcard)
+		if err != nil {
+			return err
+		}
+
+		for _, match := range matches {
+			relativePath, relativeErr := filepath.Rel(absoluteConfigDirectory, match)
+			if relativeErr != nil {
+				return relativeErr
+			}
+			sourceFiles = append(sourceFiles, relativePath)
+		}
+
+	}
+
+	sort.Strings(sourceFiles)
+	const sourceFileSeparator = "\n  "
+	sourceFilesString := sourceFileSeparator + strings.Join(sourceFiles, sourceFileSeparator)
+
 	data := Data{
-		Name:                    libraryNameFromDepsConfig,
+		Name:                    cmakeName,
 		SourceDirs:              config.SourceDirs,
 		DependencyLibraryNames:  dependencyLibraryNames,
+		SourceFilesString:       sourceFilesString,
+		ArtifactType:            config.ArtifactType,
 		DependencyLibraryString: publicDependencyLibraryNames}
 
-	result.Execute(os.Stdout, data)
-
-	return nil
+	return result.Execute(os.Stdout, data)
 }
