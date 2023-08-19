@@ -31,7 +31,7 @@ type Data struct {
 	ArtifactType            string
 }
 
-func getLibraryNameFromRepo(repo string) string {
+func GetLibraryNameFromRepo(repo string) string {
 	projectName := strings.Split(repo, "/")[1]
 	if strings.HasSuffix(projectName, "-c") {
 		return projectName[:len(projectName)-2]
@@ -71,7 +71,7 @@ func Build(genConfigFilename string) error {
 
 	if len(config.Dependencies) == 0 {
 		for _, dep := range depsConfig.Dependencies {
-			dependencyLibraryNames = append(dependencyLibraryNames, getLibraryNameFromRepo(dep.Name))
+			dependencyLibraryNames = append(dependencyLibraryNames, GetLibraryNameFromRepo(dep.Name))
 		}
 	} else {
 		dependencyLibraryNames = config.Dependencies
@@ -91,14 +91,14 @@ func Build(genConfigFilename string) error {
 
 	cmakeName := config.Name
 	if config.Name == "" {
-		cmakeName = getLibraryNameFromRepo(depsConfig.Name)
+		cmakeName = GetLibraryNameFromRepo(depsConfig.Name)
 
 	}
 
 	publicDependencyLibraryNames := ""
 
 	if len(dependencyLibraryNames) > 0 {
-		const libraryNamesSeparator = "\n  PUBLIC "
+		const libraryNamesSeparator = "\n  "
 		publicDependencyLibraryNames = libraryNamesSeparator + strings.Join(dependencyLibraryNames,
 			libraryNamesSeparator)
 	}

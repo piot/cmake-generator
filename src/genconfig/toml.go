@@ -28,7 +28,7 @@ func (e ArtifactType) String() string {
 	case Executable:
 		return "executable"
 	default:
-		return fmt.Sprintf("%v", e)
+		return fmt.Sprintf("%d", e)
 	}
 }
 
@@ -38,6 +38,7 @@ type GenConfig struct {
 	ArtifactType    string `toml:"artifact_type"`
 	SourceDirs      []string
 	Dependencies    []string
+	Defines         map[string]string `toml:"defines"`
 }
 
 func ReadGenConfigFromReader(reader io.Reader) (*GenConfig, error) {
@@ -46,11 +47,13 @@ func ReadGenConfigFromReader(reader io.Reader) (*GenConfig, error) {
 		return nil, tomlParseErr
 	}
 	config := &GenConfig{}
+
 	unmarshalErr := toml.Unmarshal(tomlString, config)
 	if unmarshalErr != nil {
 		log.Printf("unmarshal: %v", unmarshalErr)
 		return nil, unmarshalErr
 	}
+
 	if config.CmakeGenVersion != "0.0.0" {
 		return nil, fmt.Errorf("wrong deps file format version '%v'", config.CmakeGenVersion)
 	}
