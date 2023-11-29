@@ -8,7 +8,6 @@ package sub_dir
 import (
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -77,15 +76,19 @@ func SubDir() error {
 
 	fmt.Printf("\n\n")
 
-	normalSubDirectories := []string{"lib", "tests", "examples"}
-	for _, subDirectory := range normalSubDirectories {
-		if _, err := os.Stat(subDirectory); os.IsNotExist(err) {
-			continue
+	/*
+		 normalSubDirectories := []string{"lib", "tests", "examples"}
+		for _, subDirectory := range normalSubDirectories {
+			if _, err := os.Stat(subDirectory); os.IsNotExist(err) {
+				continue
+			}
+			fmt.Printf("add_subdirectory(%v)\n", subDirectory)
 		}
-		fmt.Printf("add_subdirectory(%v)\n", subDirectory)
-	}
 
-	fmt.Printf("\n\n")
+		fmt.Printf("\n\n")
+	*/
+
+	fmt.Printf("add_subdirectory(src)\n")
 
 	var developmentPackageNames []string
 	for _, packageDevDependency := range depsConfig.Development {
