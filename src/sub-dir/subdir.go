@@ -47,7 +47,7 @@ func SubDir() error {
 		return configErr
 	}
 
-	fmt.Printf("cmake_minimum_required(VERSION 3.16.3)\nproject(%v C)\n\n",
+	fmt.Printf("cmake_minimum_required(VERSION 3.16.3)\nproject(%v C)\nenable_testing()\n\n",
 		command.GetLibraryNameFromRepo(depsConfig.Name))
 
 	firstConfig := configFiles[0]
